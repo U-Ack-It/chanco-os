@@ -107,4 +107,6 @@ result = mechanic.apply("worker.py", old_text, new_text, actor="agent")
 
 Built by **Olivier Boukli** ([U-Ack-It](https://github.com/U-Ack-It)): background in network administration, construction site coordination and luxury client service, now building AI agent systems with safety in the code.
 
+The same pattern (the AI proposes, plain code decides, everything on the record) now runs **[Obrava](https://github.com/U-Ack-It/obrava)**, a bilingual assistant for small construction companies that I'm building.
+
 MIT license.
