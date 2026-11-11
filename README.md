@@ -64,7 +64,22 @@ An agent that reads the web at night and can edit code is only useful if a poiso
 | Agent loosens its own rules | `gate.py` and `config.py` can never be patched; the live server and `mechanic.py` itself only accept **human-approved proposals** | `test_gate.py`, `test_mechanic.py` |
 | Overconfident AI evidence | Evidence grades capped in code (one source ≤ B; anonymous or social-only ≤ C; no source = D) | Private test suite |
 
-The private system runs **34 automatic tests** (including a 10-attack security lab in a throwaway home folder) before every commit, through a git pre-commit hook.
+The private system runs **more than 140 automatic tests** (including a 10-attack security lab in a throwaway home folder) before every commit, through a git pre-commit hook.
+
+---
+
+## Reliability: the night shift must never lie or lose work
+
+A code review of the overnight jobs (November 2026) found that some of them could fail quietly. Each fix below is plain code with tests; the new tests were also run against the **old** code to prove they catch the problem.
+
+| Problem found | Fix | Proof |
+|---|---|---|
+| After a reboot, the server started before the OS keyring unlocked, retried an old database password every 30 s and locked the database account | A readiness check logs in for real and **never retries a refused password**; the server now waits for the unlocked keyring before starting | Lab: a refused login is tried exactly once; zero failed logins in 70 s after the fix |
+| Night steps ran even when a database was down, and each one crashed on its own | Every step declares what it needs; when that is down it is **skipped and reported**, and one failed step no longer blocks the others | The real pipeline script run in a throwaway home folder with fake steps |
+| The web hunter reported success even when nothing was saved | Honest counts (new / already known / skipped / errors), a real exit code, and one summary line per step in the night log | Tests with the embedding service switched off |
+| The investigation queue was rewritten from a stale copy, silently erasing leads added in the meantime; dossiers rejected by the safety check still counted as done | A small database queue: retries with growing waits, then the lead is **kept on record as failed, never deleted**; jobs cut off by a crash go back in the queue | 29 new tests; 17 of them fail on the old code |
+
+The changes went in through an installer that refuses files changed since testing, backs everything up, runs the whole suite, and **rolls itself back** if a single test fails.
 
 ---
 
@@ -100,6 +115,8 @@ result = mechanic.apply("worker.py", old_text, new_text, actor="agent")
 6. **Check, don't assume.** A database password change failed once because the real password wasn't the default. Since then, every step reads the real state before changing it.
 7. **Proof over promises.** Every change was tested in a lab first, and the security lab was run against the old code too, to prove it catches the problem.
 8. **Test the backup.** The first restore test failed on an exFAT drive (no symlinks, case-insensitive names). The second restored a file byte for byte. A backup you never restored is a hope.
+9. **A green light must mean something.** A step that says OK while saving nothing is worse than a step that fails loudly.
+10. **Never retry a refused password.** Retrying is what turns one wrong password into a locked account.
 
 ---
 
